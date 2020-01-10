@@ -182,7 +182,7 @@ public class UtterAsterisk extends JFrame implements PitchDetectionHandler {
 	public void handlePitch(PitchDetectionResult pitchDetectionResult,AudioEvent audioEvent) {
 		double timeStamp = audioEvent.getTimeStamp();
 		float pitch = pitchDetectionResult.getPitch();
-		panel.setMarker(timeStamp, pitch);		
+		panel.addDetectedFrequency(timeStamp, pitch);
 	}
 
 }
