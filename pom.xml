@@ -66,6 +66,16 @@
             <artifactId>android</artifactId>
             <version>4.1.1.4</version>
         </dependency>
+        <dependency>
+            <groupId>pdj</groupId>
+            <artifactId>pdj</artifactId>
+            <version>1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.org.apache.xml.internal</groupId>
+            <artifactId>resolver</artifactId>
+            <version>20050927</version>
+        </dependency>
     </dependencies>
 
 </project>
