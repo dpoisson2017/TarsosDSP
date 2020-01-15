@@ -22,10 +22,12 @@
  */
 
 
-package be.tarsos.dsp.example;
+package be.tarsos.dsp.example.utterasterisk;
 
 import be.tarsos.dsp.AudioDispatcher;
 import be.tarsos.dsp.AudioEvent;
+import be.tarsos.dsp.example.InputPanel;
+import be.tarsos.dsp.example.PitchDetectionPanel;
 import be.tarsos.dsp.io.jvm.JVMAudioInputStream;
 import be.tarsos.dsp.pitch.PitchDetectionHandler;
 import be.tarsos.dsp.pitch.PitchDetectionResult;
@@ -173,8 +175,8 @@ public class UtterAsterisk extends JFrame implements PitchDetectionHandler {
 
     @Override
     public void handlePitch(PitchDetectionResult pitchDetectionResult, AudioEvent audioEvent) {
-        //System.out.println("Pitch: " + pitchDetectionResult.getPitch() + "\tisPitched: " + pitchDetectionResult.getPitch() + "\tprobability: " + pitchDetectionResult.getProbability());
         double timeStamp = audioEvent.getTimeStamp();
+//        System.out.println("Pitch: " + pitchDetectionResult.getPitch() + "\tisPitched: " + pitchDetectionResult.getPitch() + "\tprobability: " + pitchDetectionResult.getProbability() + "\ttimestamp: " + timeStamp);
         float pitch = pitchDetectionResult.getPitch();
         panel.addDetectedFrequency(timeStamp, pitch);
     }

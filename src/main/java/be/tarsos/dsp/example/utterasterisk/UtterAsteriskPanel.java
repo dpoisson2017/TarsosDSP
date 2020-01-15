@@ -22,8 +22,10 @@
  */
 
 
-package be.tarsos.dsp.example;
+package be.tarsos.dsp.example.utterasterisk;
 
+import be.tarsos.dsp.example.utterasterisk.domain.Call;
+import be.tarsos.dsp.example.utterasterisk.domain.Note;
 import be.tarsos.dsp.util.PitchConverter;
 
 import java.awt.*;
@@ -35,57 +37,63 @@ public class UtterAsteriskPanel extends JPanel {
     private static final double ALLOWED_PITCH_TOLERANCE_IN_PERCENT = 30.0;
     public static final int MINIMUM_DISPLAYED_FREQUENCY = 80;
     public static final int MAXIMUM_DISPLAYED_FREQUENCY = 2000;
-    public static final double INITIAL_PAUSE_DELAY_IN_SECONDS = 0.5;
-    private double patternLengthInSeconds = 6;
-    private double currentMarker = 0;
+    private double timeOfCallVerticalBar = 0;
     private long lastReset;
     private int score;
-    private double patternLengthInQuarterNotes;
     private double currentX = 0;
 
+    private Call animalCall;
 
     /*	double[] pattern={400,400,600,400,900,800,400,400,600,400,1100,900}; // in cents
         double[] timing ={3  ,1  ,4  ,4  ,4  ,6  ,3  ,1  ,4  ,4  ,4  ,6   }; //in eight notes
     */
-    double[] pattern = {400, 500, 600, 700, 800, 900, 800, 700, 600, 500, 400, 300}; // in cents
+/*    double[] pattern = {400, 500, 600, 700, 800, 900, 800, 700, 600, 500, 400, 300}; // in cents
     double[] timing = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}; //in eight notes
-
+*/
     ArrayList<Double> startTimeStamps = new ArrayList<Double>();
     ArrayList<Double> pitches = new ArrayList<Double>();
     ArrayList<Boolean> matches = new ArrayList<Boolean>();
 
     public UtterAsteriskPanel() {
-        patternLengthInQuarterNotes = calculatePatternLengthInQuarterNotes();
+        animalCall = createAnimalCall();
     }
 
-    private int calculatePatternLengthInQuarterNotes() {
-        int length = 0;
-        for (double timeInQuarterNotes : timing) {
-            length += timeInQuarterNotes;
-        }
-        return length;
-    }
+    private Call createAnimalCall() {
+        Call call = new Call();
+        call.addNote(new Note(400, 1));
+        call.addNote(new Note(500, 2));
+        call.addNote(new Note(600, 0.5));
+        call.addNote(new Note(700, 2));
+        call.addNote(new Note(800, 1));
+        call.addNote(new Note(900, 2));
+        call.addNote(new Note(800, 1));
+        call.addNote(new Note(700, 1));
+        call.addNote(new Note(600, 1));
+        call.addNote(new Note(500, 1));
+        call.addNote(new Note(400, 1));
+        call.addNote(new Note(300, 1));
 
+        return call;
+    }
 
     @Override
     public void paint(final Graphics g) {
         final Graphics2D graphics = (Graphics2D) g;
         initializeGraphicsContext(graphics);
 
-        int x = calculateCurrentPositionOnScreen();
+        int x = calculateTimeOfCallPosition();
         if (isBeginning(x)) {
             reset();
         }
 
         drawCurrentPointInTimeVerticalLine(graphics, x);
-        drawScore(graphics);
         drawNotesToPlay(graphics);
         drawUserPitchDetected(graphics);
+        drawScore(graphics);
     }
 
     private void reset() {
         lastReset = System.currentTimeMillis();
-        calculateScore();
         pitches.clear();
         startTimeStamps.clear();
         currentX = 0;
@@ -95,15 +103,15 @@ public class UtterAsteriskPanel extends JPanel {
         return x < 3 && System.currentTimeMillis() - lastReset > 1000;
     }
 
-    private int calculateCurrentPositionOnScreen() {
-        return (int) (currentMarker / (float) patternLengthInSeconds * getWidth());
+    private int calculateTimeOfCallPosition() {
+        return (int) (timeOfCallVerticalBar / (float) animalCall.getLengthInSeconds() * getWidth());
     }
 
     private void drawUserPitchDetected(Graphics2D graphics) {
         for (int i = 0; i < pitches.size(); i++) {
             double pitchInCents = pitches.get(i);
-            double startTimeStamp = startTimeStamps.get(i) % patternLengthInSeconds;
-            int patternX = (int) (startTimeStamp / (double) patternLengthInSeconds * getWidth());
+            double startTimeStamp = startTimeStamps.get(i) % animalCall.getLengthInSeconds();
+            int patternX = (int) (startTimeStamp / (double) animalCall.getLengthInSeconds() * getWidth());
             int patternY = getHeight() - (int) (pitchInCents / 1200.0 * getHeight());
             boolean pitchMatches = matches.get(i);
             if (pitchMatches) {
@@ -117,16 +125,36 @@ public class UtterAsteriskPanel extends JPanel {
 
     private void drawNotesToPlay(Graphics2D graphics) {
         graphics.setColor(Color.GRAY);
-        double lengthPerQuarterNoteInSeconds = patternLengthInSeconds / patternLengthInQuarterNotes; // in seconds per quarter note
-        double currentXPosition = INITIAL_PAUSE_DELAY_IN_SECONDS; // seconds of pause before start
-        for (int i = 0; i < pattern.length; i++) {
-            double lengthInSeconds = timing[i] * lengthPerQuarterNoteInSeconds;//seconds
-            int patternWidth = (int) (lengthInSeconds / (double) patternLengthInSeconds * getWidth());//pixels
-            int patternHeight = (int) (ALLOWED_PITCH_TOLERANCE_IN_PERCENT * 2 / 1200.0 * getHeight());
-            int patternX = (int) ((currentXPosition) / (double) patternLengthInSeconds * getWidth());
-            int patternY = getHeight() - (int) (pattern[i] / 1200.0 * getHeight()) - patternHeight / 2;
-            graphics.drawRect(patternX, patternY, patternWidth, patternHeight);
+        double currentXPosition = 0; // seconds of pause before start
+        for (int i = 0; i < animalCall.numberOfNotes(); i++) {
+            Note note = animalCall.getNote(i);
+
+            double lengthInSeconds = note.getDuration();// * secondsPerQuarterNote;//seconds
+            int patternWidthInPixels = (int) (lengthInSeconds / (double) animalCall.getLengthInSeconds() * getWidth());//pixels
+            int patternHeightInPixels = (int) (ALLOWED_PITCH_TOLERANCE_IN_PERCENT * 2 / 1200.0 * getHeight());
+            int patternX = (int) ((currentXPosition) / (double) animalCall.getLengthInSeconds() * getWidth());
+            int patternY = getHeight() - (int) (note.getPitch() / 1200.0 * getHeight()) - patternHeightInPixels / 2;
+            graphics.drawRect(patternX, patternY, patternWidthInPixels, patternHeightInPixels);
             currentXPosition += lengthInSeconds; //in seconds
+        }
+    }
+
+    private void drawNotesToPlayNew(Graphics2D graphics) {
+        graphics.setColor(Color.GREEN);
+        double currentXPosition = 0;
+        int previousXPosition = 0;
+        int previousYPosition = 0;
+        int currentX = 0;
+        int currentY = 0;
+
+        for (int i = 0; i < animalCall.numberOfNotes(); i++) {
+            Note note = animalCall.getNote(i);
+            currentX = (int) note.getDuration();
+            currentY = (int) note.getPitch();
+            graphics.drawLine(previousXPosition, previousYPosition, currentX, currentY);
+            previousXPosition = currentX;
+            previousYPosition = currentY;
+            currentXPosition += currentX;
         }
     }
 
@@ -150,53 +178,32 @@ public class UtterAsteriskPanel extends JPanel {
         graphics.drawLine(x, 0, x, getHeight());
     }
 
-
-    private void calculateScore() {
-        score = 0;
-        for (int i = 0; i < pitches.size(); i++) {
-            double pitchInCents = pitches.get(i);
-            double startTimeStamp = startTimeStamps.get(i) % patternLengthInSeconds;
-            if (startTimeStamp > INITIAL_PAUSE_DELAY_IN_SECONDS && startTimeStamp <= INITIAL_PAUSE_DELAY_IN_SECONDS + INITIAL_PAUSE_DELAY_IN_SECONDS * pattern.length) {
-                double lengthPerQuarterNoteInSeconds = patternLengthInSeconds / patternLengthInQuarterNotes; // in seconds per quarter note
-                double currentXPosition = INITIAL_PAUSE_DELAY_IN_SECONDS; // seconds of pause before start
-                for (int j = 0; j < pattern.length; j++) {
-                    double lengthInSeconds = timing[j] * lengthPerQuarterNoteInSeconds;//seconds
-                    if (matchesExpectedPitch(startTimeStamp, currentXPosition, lengthInSeconds, pitchInCents, j)) {
-                        score++;
-                    }
-                    currentXPosition += lengthInSeconds; //in seconds
-                }
-            }
-        }
-    }
-
     private boolean matchesExpectedPitch(double startTimeStamp, double currentXPositionInSeconds, double lengthInSeconds, double pitchInCents, int patternIndex) {
-        System.out.println(startTimeStamp + "\t" + currentXPositionInSeconds + "\t" + lengthInSeconds + "\t" + pitchInCents + "\t" + patternIndex);
-        return startTimeStamp > currentXPositionInSeconds && startTimeStamp <= currentXPositionInSeconds + lengthInSeconds && Math.abs(pitchInCents - pattern[patternIndex]) < ALLOWED_PITCH_TOLERANCE_IN_PERCENT;
+        //System.out.println(startTimeStamp + "\t" + currentXPositionInSeconds + "\t" + lengthInSeconds + "\t" + pitchInCents + "\t" + patternIndex);
+        return startTimeStamp > currentXPositionInSeconds && startTimeStamp <= currentXPositionInSeconds + lengthInSeconds && Math.abs(pitchInCents - animalCall.getNote(patternIndex).getPitch()) < ALLOWED_PITCH_TOLERANCE_IN_PERCENT;
     }
 
-    public void addDetectedFrequency(double timeStamp, double frequency) {
-        currentMarker = timeStamp % patternLengthInSeconds;
+    public void addDetectedFrequency(double timestamp, double frequency) {
+        timeOfCallVerticalBar = timestamp % animalCall.getLengthInSeconds();
 
-        if (canBeDisplayed(frequency)) {
+        if (allowBandPassFilter(frequency, MINIMUM_DISPLAYED_FREQUENCY, MAXIMUM_DISPLAYED_FREQUENCY)) {
             double pitchInCents = PitchConverter.hertzToRelativeCent(frequency);
             pitches.add(pitchInCents);
-            startTimeStamps.add(timeStamp);
+            startTimeStamps.add(timestamp);
 
-            double timeStampInSeconds = timeStamp % patternLengthInSeconds;
-            double lengthPerQuarterNoteInSeconds = patternLengthInSeconds / patternLengthInQuarterNotes; // in seconds per quarter note
-            double lengthInSeconds = timing[timing.length - 1] * lengthPerQuarterNoteInSeconds;//seconds
-            currentX += lengthInSeconds;
+            Note expectedNote = animalCall.at(timestamp);
+            boolean match = Math.abs(pitchInCents - expectedNote.getPitch()) < ALLOWED_PITCH_TOLERANCE_IN_PERCENT;
 
-            boolean match = matchesExpectedPitch(timeStampInSeconds, currentX, lengthInSeconds, pitchInCents, pattern.length - 1);
-            System.out.println("Match: " + match);
+            if (match) {
+                score++;
+            }
+
             matches.add(match);
         }
         this.repaint();
     }
 
-    private boolean canBeDisplayed(double frequency) {
-        //ignore everything outside 80-2000Hz
-        return frequency > MINIMUM_DISPLAYED_FREQUENCY && frequency < MAXIMUM_DISPLAYED_FREQUENCY;
+    private boolean allowBandPassFilter(double frequency, int lowerBound, int upperBound) {
+        return frequency > lowerBound && frequency < upperBound;
     }
 }
