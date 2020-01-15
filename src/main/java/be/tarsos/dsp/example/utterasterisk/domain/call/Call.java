@@ -1,4 +1,4 @@
-package be.tarsos.dsp.example.utterasterisk.domain;
+package be.tarsos.dsp.example.utterasterisk.domain.call;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -6,6 +6,7 @@ import java.util.List;
 public class Call {
     private List<Note> notes = new ArrayList<Note>();
     private double lengthInSeconds = 0;
+    private CallId id;
 
     public void addNote(Note note) {
         notes.add(note);
@@ -36,4 +37,7 @@ public class Call {
         return lengthInSeconds;
     }
 
+    public CallId getId() {
+        return id;
+    }
 }

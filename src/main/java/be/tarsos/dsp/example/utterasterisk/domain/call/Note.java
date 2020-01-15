@@ -1,4 +1,4 @@
-package be.tarsos.dsp.example.utterasterisk.domain;
+package be.tarsos.dsp.example.utterasterisk.domain.call;
 
 public class Note {
     private double pitch;

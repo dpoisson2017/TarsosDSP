@@ -28,6 +28,10 @@ import be.tarsos.dsp.AudioDispatcher;
 import be.tarsos.dsp.AudioEvent;
 import be.tarsos.dsp.example.InputPanel;
 import be.tarsos.dsp.example.PitchDetectionPanel;
+import be.tarsos.dsp.example.utterasterisk.domain.UserPitchDetectionHandler;
+import be.tarsos.dsp.example.utterasterisk.domain.call.CallFactory;
+import be.tarsos.dsp.example.utterasterisk.domain.filter.BandPassFilter;
+import be.tarsos.dsp.example.utterasterisk.ui.UtterAsteriskPanel;
 import be.tarsos.dsp.io.jvm.JVMAudioInputStream;
 import be.tarsos.dsp.pitch.PitchDetectionHandler;
 import be.tarsos.dsp.pitch.PitchDetectionResult;
@@ -40,6 +44,7 @@ import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Collections;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.DataLine;
@@ -50,9 +55,14 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 
-public class UtterAsterisk extends JFrame implements PitchDetectionHandler {
+public class UtterAsteriskApplication extends JFrame implements PitchDetectionHandler {
+
+    private static final double ALLOWED_PITCH_TOLERANCE_IN_PERCENT = 30.0;
+    public static final int MINIMUM_DISPLAYED_FREQUENCY = 80;
+    public static final int MAXIMUM_DISPLAYED_FREQUENCY = 2000;
 
     private final UtterAsteriskPanel panel;
+    private UserPitchDetectionHandler userPitchDetectionHandler;
     private AudioDispatcher dispatcher;
     private Mixer currentMixer;
     private PitchEstimationAlgorithm algo;
@@ -72,13 +82,16 @@ public class UtterAsterisk extends JFrame implements PitchDetectionHandler {
         }
     };
 
-    public UtterAsterisk() {
+    public UtterAsteriskApplication() {
         this.setLayout(new BorderLayout());
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setTitle("UtterAsterisk");
 
-        panel = new UtterAsteriskPanel();
-
+        panel = new UtterAsteriskPanel(
+            ALLOWED_PITCH_TOLERANCE_IN_PERCENT,
+            Collections.singletonList(new BandPassFilter(MINIMUM_DISPLAYED_FREQUENCY, MAXIMUM_DISPLAYED_FREQUENCY)),
+            new CallFactory()
+        );
 
         algo = PitchEstimationAlgorithm.YIN;
 
@@ -144,7 +157,7 @@ public class UtterAsterisk extends JFrame implements PitchDetectionHandler {
         dispatcher = new AudioDispatcher(audioStream, bufferSize, overlap);
 
         // add a processor, handle percussion event.
-        dispatcher.addAudioProcessor(new PitchProcessor(algo, sampleRate, bufferSize, this));
+        dispatcher.addAudioProcessor(new PitchProcessor(algo, sampleRate, bufferSize, userPitchDetectionHandler));
 
         // run the dispatcher (on a new thread).
         new Thread(dispatcher, "Audio dispatching").start();
@@ -165,7 +178,7 @@ public class UtterAsterisk extends JFrame implements PitchDetectionHandler {
                 } catch (Exception e) {
                     //ignore failure to set default look en feel;
                 }
-                JFrame frame = new UtterAsterisk();
+                JFrame frame = new UtterAsteriskApplication();
                 frame.pack();
                 frame.setSize(640, 480);
                 frame.setVisible(true);
