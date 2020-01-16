@@ -1,4 +1,4 @@
-package be.tarsos.dsp.example.utterasterisk.domain.call;
+package be.tarsos.dsp.example.utterasterisk.domain.call.expected;
 
 import java.util.Objects;
 

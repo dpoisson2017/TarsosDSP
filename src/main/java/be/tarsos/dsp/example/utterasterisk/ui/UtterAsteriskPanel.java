@@ -24,9 +24,13 @@
 
 package be.tarsos.dsp.example.utterasterisk.ui;
 
-import be.tarsos.dsp.example.utterasterisk.domain.call.Call;
-import be.tarsos.dsp.example.utterasterisk.domain.call.CallFactory;
-import be.tarsos.dsp.example.utterasterisk.domain.call.Note;
+import be.tarsos.dsp.example.utterasterisk.domain.Scoreboard;
+import be.tarsos.dsp.example.utterasterisk.domain.call.detected.DetectedCall;
+import be.tarsos.dsp.example.utterasterisk.domain.call.expected.Call;
+import be.tarsos.dsp.example.utterasterisk.domain.call.expected.CallFactory;
+import be.tarsos.dsp.example.utterasterisk.domain.call.expected.Note;
+import be.tarsos.dsp.example.utterasterisk.domain.call.detected.DetectedNote;
+import be.tarsos.dsp.example.utterasterisk.domain.comparison.NoteComparator;
 import be.tarsos.dsp.example.utterasterisk.domain.filter.Filter;
 import be.tarsos.dsp.util.PitchConverter;
 
@@ -39,25 +43,32 @@ public class UtterAsteriskPanel extends JPanel {
     private static final long serialVersionUID = -5330666476785715988L;
     private double timeOfCallVerticalBar = 0;
     private long lastReset;
-    private int score;
     private double currentX = 0;
     private double errorToleranceInPercent;
     private CallDrawingStrategy callDrawingStrategy;
+    private DetectedCallDrawingStrategy detectedCallDrawingStrategy;
     private List<Filter> filters = new ArrayList<Filter>();
     private CallFactory callFactory;
+    private NoteComparator noteComparator;
+    private Scoreboard scoreBoard;
 
     private Call animalCall;
+    private DetectedCall detectedCall;
 
-    ArrayList<Double> startTimeStamps = new ArrayList<Double>();
-    ArrayList<Double> pitches = new ArrayList<Double>();
-    ArrayList<Boolean> matches = new ArrayList<Boolean>();
-
-    public UtterAsteriskPanel(double errorToleranceInPercent, List<Filter> filters, CallFactory callFactory) {
+    public UtterAsteriskPanel(double errorToleranceInPercent,
+                              List<Filter> filters,
+                              CallFactory callFactory,
+                              NoteComparator noteComparator,
+                              Scoreboard scoreBoard) {
         this.errorToleranceInPercent = errorToleranceInPercent;
         this.callDrawingStrategy = new CallDrawingAsBars(errorToleranceInPercent, this);
+        this.detectedCallDrawingStrategy = new DetectedCallDrawingAsPoints(this);
         this.filters.addAll(filters);
         this.callFactory = callFactory;
+        this.noteComparator = noteComparator;
         animalCall = this.callFactory.createDefault();
+        detectedCall = new DetectedCall(animalCall);
+        this.scoreBoard = scoreBoard;
     }
 
     @Override
@@ -72,16 +83,15 @@ public class UtterAsteriskPanel extends JPanel {
 
         drawCurrentPointInTimeVerticalLine(graphics, x);
         drawNotesToPlay(graphics);
-        drawUserPitchDetected(graphics);
+        drawNotesDetected(graphics);
         drawScore(graphics);
     }
 
     private void reset() {
         lastReset = System.currentTimeMillis();
-        pitches.clear();
-        startTimeStamps.clear();
+        detectedCall.clear();
         currentX = 0;
-        score = 0;
+        scoreBoard.reset();
     }
 
     private boolean isBeginning(int x) {
@@ -92,20 +102,8 @@ public class UtterAsteriskPanel extends JPanel {
         return (int) (timeOfCallVerticalBar / (float) animalCall.getLengthInSeconds() * getWidth());
     }
 
-    private void drawUserPitchDetected(Graphics2D graphics) {
-        for (int i = 0; i < pitches.size(); i++) {
-            double pitchInCents = pitches.get(i);
-            double startTimeStamp = startTimeStamps.get(i) % animalCall.getLengthInSeconds();
-            int patternX = (int) (startTimeStamp / (double) animalCall.getLengthInSeconds() * getWidth());
-            int patternY = getHeight() - (int) (pitchInCents / 1200.0 * getHeight());
-            boolean pitchMatches = matches.get(i);
-            if (pitchMatches) {
-                graphics.setColor(Color.GREEN);
-            } else {
-                graphics.setColor(Color.RED);
-            }
-            graphics.drawRect(patternX, patternY, 2, 2);
-        }
+    private void drawNotesDetected(Graphics2D graphics) {
+        detectedCallDrawingStrategy.draw(graphics, detectedCall);
     }
 
     private void drawNotesToPlay(Graphics2D graphics) {
@@ -115,14 +113,13 @@ public class UtterAsteriskPanel extends JPanel {
     private void drawScore(Graphics2D graphics) {
         graphics.setColor(Color.BLACK);
         if (lastReset != 0) {
-            graphics.drawString("Score: " + String.valueOf(score), getWidth() / 2, 20);
+            graphics.drawString("Score: " + String.valueOf(scoreBoard.getScore()), getWidth() / 2, 20);
         }
     }
 
     private void initializeGraphicsContext(Graphics2D graphics) {
         graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        graphics.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS,
-            RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+        graphics.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
         graphics.setBackground(Color.WHITE);
         graphics.clearRect(0, 0, getWidth(), getHeight());
     }
@@ -132,28 +129,16 @@ public class UtterAsteriskPanel extends JPanel {
         graphics.drawLine(x, 0, x, getHeight());
     }
 
-    private boolean matchesExpectedPitch(double startTimeStamp, double currentXPositionInSeconds, double lengthInSeconds, double pitchInCents, int patternIndex) {
-        //System.out.println(startTimeStamp + "\t" + currentXPositionInSeconds + "\t" + lengthInSeconds + "\t" + pitchInCents + "\t" + patternIndex);
-        return startTimeStamp > currentXPositionInSeconds && startTimeStamp <= currentXPositionInSeconds + lengthInSeconds && Math.abs(pitchInCents - animalCall.getNote(patternIndex).getPitch()) < errorToleranceInPercent;
-    }
-
     public void addDetectedFrequency(double timestamp, double frequency) {
         timeOfCallVerticalBar = timestamp % animalCall.getLengthInSeconds();
 
         boolean passesAllFilters = filters.stream().allMatch(filter-> filter.filter(frequency));
         if (passesAllFilters) {
-            double pitchInCents = PitchConverter.hertzToRelativeCent(frequency);
-            pitches.add(pitchInCents);
-            startTimeStamps.add(timestamp);
+            DetectedNote detectedNote = new DetectedNote(PitchConverter.hertzToRelativeCent(frequency), timestamp);
 
             Note expectedNote = animalCall.at(timestamp);
-            boolean match = Math.abs(pitchInCents - expectedNote.getPitch()) < errorToleranceInPercent;
-
-            if (match) {
-                score++;
-            }
-
-            matches.add(match);
+            noteComparator.compare(expectedNote, detectedNote);
+            detectedCall.addNote(detectedNote);
         }
         this.repaint();
     }

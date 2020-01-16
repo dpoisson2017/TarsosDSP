@@ -1,4 +1,4 @@
-package be.tarsos.dsp.example.utterasterisk.domain.call;
+package be.tarsos.dsp.example.utterasterisk.domain.call.expected;
 
 public class CallNotFoundException extends Exception {
     public CallNotFoundException(CallId id) {

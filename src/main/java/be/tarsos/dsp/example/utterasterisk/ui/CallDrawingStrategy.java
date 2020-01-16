@@ -1,6 +1,6 @@
 package be.tarsos.dsp.example.utterasterisk.ui;
 
-import be.tarsos.dsp.example.utterasterisk.domain.call.Call;
+import be.tarsos.dsp.example.utterasterisk.domain.call.expected.Call;
 
 import java.awt.*;
 

@@ -25,16 +25,16 @@
 package be.tarsos.dsp.example.utterasterisk;
 
 import be.tarsos.dsp.AudioDispatcher;
-import be.tarsos.dsp.AudioEvent;
+import be.tarsos.dsp.SilenceDetector;
 import be.tarsos.dsp.example.InputPanel;
 import be.tarsos.dsp.example.PitchDetectionPanel;
+import be.tarsos.dsp.example.utterasterisk.domain.Scoreboard;
 import be.tarsos.dsp.example.utterasterisk.domain.UserPitchDetectionHandler;
-import be.tarsos.dsp.example.utterasterisk.domain.call.CallFactory;
+import be.tarsos.dsp.example.utterasterisk.domain.call.expected.CallFactory;
+import be.tarsos.dsp.example.utterasterisk.domain.comparison.NoteComparator;
 import be.tarsos.dsp.example.utterasterisk.domain.filter.BandPassFilter;
 import be.tarsos.dsp.example.utterasterisk.ui.UtterAsteriskPanel;
 import be.tarsos.dsp.io.jvm.JVMAudioInputStream;
-import be.tarsos.dsp.pitch.PitchDetectionHandler;
-import be.tarsos.dsp.pitch.PitchDetectionResult;
 import be.tarsos.dsp.pitch.PitchProcessor;
 import be.tarsos.dsp.pitch.PitchProcessor.PitchEstimationAlgorithm;
 
@@ -55,7 +55,9 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 
-public class UtterAsteriskApplication extends JFrame implements PitchDetectionHandler {
+public class UtterAsteriskApplication extends JFrame {
+
+    private static final long serialVersionUID = 4787721035066991486L;
 
     private static final double ALLOWED_PITCH_TOLERANCE_IN_PERCENT = 30.0;
     public static final int MINIMUM_DISPLAYED_FREQUENCY = 80;
@@ -87,11 +89,16 @@ public class UtterAsteriskApplication extends JFrame implements PitchDetectionHa
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setTitle("UtterAsterisk");
 
+        Scoreboard scoreBoard = new Scoreboard();
         panel = new UtterAsteriskPanel(
             ALLOWED_PITCH_TOLERANCE_IN_PERCENT,
             Collections.singletonList(new BandPassFilter(MINIMUM_DISPLAYED_FREQUENCY, MAXIMUM_DISPLAYED_FREQUENCY)),
-            new CallFactory()
+            new CallFactory(),
+            new NoteComparator(ALLOWED_PITCH_TOLERANCE_IN_PERCENT, scoreBoard),
+            scoreBoard
         );
+
+        userPitchDetectionHandler = new UserPitchDetectionHandler(panel);
 
         algo = PitchEstimationAlgorithm.YIN;
 
@@ -143,10 +150,9 @@ public class UtterAsteriskApplication extends JFrame implements PitchDetectionHa
 
         final AudioFormat format = new AudioFormat(sampleRate, 16, 1, true,
             false);
-        final DataLine.Info dataLineInfo = new DataLine.Info(
-            TargetDataLine.class, format);
-        TargetDataLine line;
-        line = (TargetDataLine) mixer.getLine(dataLineInfo);
+        final DataLine.Info dataLineInfo = new DataLine.Info(TargetDataLine.class, format);
+        TargetDataLine line = (TargetDataLine) mixer.getLine(dataLineInfo);
+
         final int numberOfSamples = bufferSize;
         line.open(format, numberOfSamples);
         line.start();
@@ -162,11 +168,6 @@ public class UtterAsteriskApplication extends JFrame implements PitchDetectionHa
         // run the dispatcher (on a new thread).
         new Thread(dispatcher, "Audio dispatching").start();
     }
-
-    /**
-     *
-     */
-    private static final long serialVersionUID = 4787721035066991486L;
 
     public static void main(String... strings) throws InterruptedException,
         InvocationTargetException {
@@ -185,13 +186,4 @@ public class UtterAsteriskApplication extends JFrame implements PitchDetectionHa
             }
         });
     }
-
-    @Override
-    public void handlePitch(PitchDetectionResult pitchDetectionResult, AudioEvent audioEvent) {
-        double timeStamp = audioEvent.getTimeStamp();
-//        System.out.println("Pitch: " + pitchDetectionResult.getPitch() + "\tisPitched: " + pitchDetectionResult.getPitch() + "\tprobability: " + pitchDetectionResult.getProbability() + "\ttimestamp: " + timeStamp);
-        float pitch = pitchDetectionResult.getPitch();
-        panel.addDetectedFrequency(timeStamp, pitch);
-    }
-
 }

@@ -1,10 +1,10 @@
-package be.tarsos.dsp.example.utterasterisk.domain.call;
+package be.tarsos.dsp.example.utterasterisk.domain.call.expected;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class Call {
-    private List<Note> notes = new ArrayList<Note>();
+    private List<Note> notes = new ArrayList<>();
     private double lengthInSeconds = 0;
     private CallId id;
 

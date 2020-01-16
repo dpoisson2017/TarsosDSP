@@ -1,9 +1,9 @@
 package be.tarsos.dsp.example.utterasterisk.persistence.call;
 
-import be.tarsos.dsp.example.utterasterisk.domain.call.Call;
-import be.tarsos.dsp.example.utterasterisk.domain.call.CallId;
-import be.tarsos.dsp.example.utterasterisk.domain.call.CallNotFoundException;
-import be.tarsos.dsp.example.utterasterisk.domain.call.CallRepository;
+import be.tarsos.dsp.example.utterasterisk.domain.call.expected.Call;
+import be.tarsos.dsp.example.utterasterisk.domain.call.expected.CallId;
+import be.tarsos.dsp.example.utterasterisk.domain.call.expected.CallNotFoundException;
+import be.tarsos.dsp.example.utterasterisk.domain.call.expected.CallRepository;
 
 import java.util.HashMap;
 import java.util.Map;
