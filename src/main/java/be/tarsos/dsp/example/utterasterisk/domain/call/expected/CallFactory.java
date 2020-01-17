@@ -7,7 +7,7 @@ public class CallFactory {
         call.addNote(new Note(400, 1));
         call.addNote(new Note(500, 2));
         call.addNote(new Note(600, 0.5));
-        call.addNote(new Note(700, 2));
+        call.addNote(new Note(700, 1.5));
         call.addNote(new Note(800, 1));
         call.addNote(new Note(900, 2));
         call.addNote(new Note(800, 1));

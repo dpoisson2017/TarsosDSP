@@ -30,9 +30,12 @@ import be.tarsos.dsp.example.InputPanel;
 import be.tarsos.dsp.example.PitchDetectionPanel;
 import be.tarsos.dsp.example.utterasterisk.domain.Scoreboard;
 import be.tarsos.dsp.example.utterasterisk.domain.UserPitchDetectionHandler;
+import be.tarsos.dsp.example.utterasterisk.domain.call.expected.Call;
 import be.tarsos.dsp.example.utterasterisk.domain.call.expected.CallFactory;
 import be.tarsos.dsp.example.utterasterisk.domain.comparison.NoteComparator;
 import be.tarsos.dsp.example.utterasterisk.domain.filter.BandPassFilter;
+import be.tarsos.dsp.example.utterasterisk.ui.HzToPixelConverter;
+import be.tarsos.dsp.example.utterasterisk.ui.SecondToPixelConverter;
 import be.tarsos.dsp.example.utterasterisk.ui.UtterAsteriskPanel;
 import be.tarsos.dsp.io.jvm.JVMAudioInputStream;
 import be.tarsos.dsp.pitch.PitchProcessor;
@@ -60,8 +63,11 @@ public class UtterAsteriskApplication extends JFrame {
     private static final long serialVersionUID = 4787721035066991486L;
 
     private static final double ALLOWED_PITCH_TOLERANCE_IN_PERCENT = 30.0;
-    public static final int MINIMUM_DISPLAYED_FREQUENCY = 80;
-    public static final int MAXIMUM_DISPLAYED_FREQUENCY = 2000;
+    private static final int MINIMUM_DISPLAYED_FREQUENCY = 80;
+    private static final int MAXIMUM_DISPLAYED_FREQUENCY = 2000;
+    private static final int SAMPLE_RATE = 44100;
+    private static final int BUFFER_SIZE = 1536;
+    private static final int OVERLAP = 0;
 
     private final UtterAsteriskPanel panel;
     private UserPitchDetectionHandler userPitchDetectionHandler;
@@ -76,10 +82,8 @@ public class UtterAsteriskApplication extends JFrame {
             algo = newAlgo;
             try {
                 setNewMixer(currentMixer);
-            } catch (LineUnavailableException e1) {
-                e1.printStackTrace();
-            } catch (UnsupportedAudioFileException e1) {
-                e1.printStackTrace();
+            } catch (Exception exception) {
+                System.out.println("Cannot start mixer");
             }
         }
     };
@@ -89,13 +93,17 @@ public class UtterAsteriskApplication extends JFrame {
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setTitle("UtterAsterisk");
 
-        Scoreboard scoreBoard = new Scoreboard();
+        Scoreboard scoreboard = new Scoreboard();
+        Call call = new CallFactory().createDefault();
+
         panel = new UtterAsteriskPanel(
+            MINIMUM_DISPLAYED_FREQUENCY,
+            MAXIMUM_DISPLAYED_FREQUENCY,
             ALLOWED_PITCH_TOLERANCE_IN_PERCENT,
             Collections.singletonList(new BandPassFilter(MINIMUM_DISPLAYED_FREQUENCY, MAXIMUM_DISPLAYED_FREQUENCY)),
-            new CallFactory(),
-            new NoteComparator(ALLOWED_PITCH_TOLERANCE_IN_PERCENT, scoreBoard),
-            scoreBoard
+            new CallFactory().createDefault(),
+            new NoteComparator(ALLOWED_PITCH_TOLERANCE_IN_PERCENT, scoreboard),
+            scoreboard
         );
 
         userPitchDetectionHandler = new UserPitchDetectionHandler(panel);
@@ -112,12 +120,8 @@ public class UtterAsteriskApplication extends JFrame {
                 public void propertyChange(PropertyChangeEvent arg0) {
                     try {
                         setNewMixer((Mixer) arg0.getNewValue());
-                    } catch (LineUnavailableException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    } catch (UnsupportedAudioFileException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
+                    } catch (Exception e) {
+                        System.out.println("Cannot start mixer");
                     }
                 }
             });
@@ -142,9 +146,9 @@ public class UtterAsteriskApplication extends JFrame {
         }
         currentMixer = mixer;
 
-        float sampleRate = 44100;
-        int bufferSize = 1536;
-        int overlap = 0;
+        float sampleRate = SAMPLE_RATE;
+        int bufferSize = BUFFER_SIZE;
+        int overlap = OVERLAP;
 
         //textArea.append("Started listening with " + Shared.toLocalString(mixer.getMixerInfo().getName()) + "\n\tparams: " + threshold + "dB\n");
 

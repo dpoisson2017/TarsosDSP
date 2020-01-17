@@ -48,27 +48,39 @@ public class UtterAsteriskPanel extends JPanel {
     private CallDrawingStrategy callDrawingStrategy;
     private DetectedCallDrawingStrategy detectedCallDrawingStrategy;
     private List<Filter> filters = new ArrayList<Filter>();
-    private CallFactory callFactory;
     private NoteComparator noteComparator;
     private Scoreboard scoreBoard;
+    private int minimumFrequency;
+    private int maximumFrequency;
+
+    private HzToPixelConverter hzToPixelConverter;
+    private SecondToPixelConverter secondToPixelConverter;
 
     private Call animalCall;
     private DetectedCall detectedCall;
 
-    public UtterAsteriskPanel(double errorToleranceInPercent,
+    public UtterAsteriskPanel(int minimumFrequency,
+                              int maximumFrequency,
+                              double errorToleranceInPercent,
                               List<Filter> filters,
-                              CallFactory callFactory,
+                              Call call,
                               NoteComparator noteComparator,
                               Scoreboard scoreBoard) {
+        this.minimumFrequency = minimumFrequency;
+        this.maximumFrequency = maximumFrequency;
         this.errorToleranceInPercent = errorToleranceInPercent;
-        this.callDrawingStrategy = new CallDrawingAsBars(errorToleranceInPercent, this);
-        this.detectedCallDrawingStrategy = new DetectedCallDrawingAsPoints(this);
         this.filters.addAll(filters);
-        this.callFactory = callFactory;
         this.noteComparator = noteComparator;
-        animalCall = this.callFactory.createDefault();
-        detectedCall = new DetectedCall(animalCall);
         this.scoreBoard = scoreBoard;
+        animalCall = call;
+        detectedCall = new DetectedCall(animalCall);
+
+        this.hzToPixelConverter = new HzToPixelConverter(this, maximumFrequency);
+        this.secondToPixelConverter = new SecondToPixelConverter(this, animalCall.getLengthInSeconds());
+
+        this.callDrawingStrategy = new CallDrawingAsBars(errorToleranceInPercent, this, hzToPixelConverter, secondToPixelConverter);
+        this.detectedCallDrawingStrategy = new DetectedCallDrawingAsPoints(this, hzToPixelConverter, secondToPixelConverter);
+
     }
 
     @Override
@@ -133,10 +145,9 @@ public class UtterAsteriskPanel extends JPanel {
     }
 
     private void drawHzScale(Graphics2D graphics) {
-        double heightOfOneHzInPixels = ((double) getHeight() / 2000);
-        int currentHz = 80;
-        while (currentHz < 2000) {
-            System.out.println("Height: " + currentHz);
+        double heightOfOneHzInPixels = ((double) getHeight() / maximumFrequency);
+        int currentHz = minimumFrequency;
+        while (currentHz < maximumFrequency) {
             int positionYAxis = (int) (getHeight() - (currentHz * heightOfOneHzInPixels));
             if (currentHz % 500 == 0) {
                 graphics.setColor(Color.BLACK);
@@ -174,7 +185,7 @@ public class UtterAsteriskPanel extends JPanel {
     }
 
     public void addDetectedFrequency(double timestamp, double frequency) {
-        timeOfCallVerticalBar = timestamp % animalCall.getLengthInSeconds();
+        timeOfCallVerticalBar = timestamp;// % animalCall.getLengthInSeconds();
 
         boolean passesAllFilters = filters.stream().allMatch(filter -> filter.filter(frequency));
         if (passesAllFilters) {

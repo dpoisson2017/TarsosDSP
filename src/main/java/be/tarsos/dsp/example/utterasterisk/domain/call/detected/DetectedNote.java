@@ -2,20 +2,20 @@ package be.tarsos.dsp.example.utterasterisk.domain.call.detected;
 
 public class DetectedNote {
     private double pitch;
-    private double timestamp;
+    private double timeInMs;
     private boolean matches = false;
 
-    public DetectedNote(double pitch, double timestamp) {
+    public DetectedNote(double pitch, double timeFromCallStartInMs) {
         this.pitch = pitch;
-        this.timestamp = timestamp;
+        this.timeInMs = timeFromCallStartInMs;
     }
 
     public double getPitch() {
         return pitch;
     }
 
-    public double getTimestamp() {
-        return timestamp;
+    public double getTime() {
+        return timeInMs;
     }
 
     public boolean isMatch() { return matches; }

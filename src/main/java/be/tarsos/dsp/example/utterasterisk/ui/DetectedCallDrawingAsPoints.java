@@ -8,23 +8,28 @@ import java.awt.*;
 
 public class DetectedCallDrawingAsPoints implements DetectedCallDrawingStrategy {
 
+    private static final double UNKNOWN_CONSTANT = 1200.0; // TODO Figure what this is for
     private static final int RECTANGLE_WIDTH = 2;
     private static final int RECTANGLE_HEIGHT = 2;
 
-    private static final double UNKNOWN_CONSTANT = 1200.0;
+    private HzToPixelConverter hzToPixelConverter;
+    private SecondToPixelConverter secondToPixelConverter;
 
     private JPanel parent;
 
-    public DetectedCallDrawingAsPoints(JPanel parent) {
+    public DetectedCallDrawingAsPoints(JPanel parent, HzToPixelConverter hzToPixelConverter, SecondToPixelConverter secondToPixelConverter) {
         this.parent = parent;
+        this.hzToPixelConverter = hzToPixelConverter;
+        this.secondToPixelConverter = secondToPixelConverter;
     }
 
     @Override
     public void draw(Graphics2D graphics, DetectedCall call) {
         for (DetectedNote note: call.getNotes()) {
-            double startTimeStamp = note.getTimestamp() % call.getLengthInSeconds();
+            double startTimeStamp = note.getTime() % call.getLengthInSeconds();
             int patternX = (int) (startTimeStamp / (double) call.getLengthInSeconds() * parent.getWidth());
             int patternY = parent.getHeight() - (int) (note.getPitch() / UNKNOWN_CONSTANT * parent.getHeight());
+
             if (note.isMatch()) {
                 graphics.setColor(Color.GREEN);
             } else {
