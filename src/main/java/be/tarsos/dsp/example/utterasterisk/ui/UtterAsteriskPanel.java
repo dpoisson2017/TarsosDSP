@@ -26,18 +26,18 @@ package be.tarsos.dsp.example.utterasterisk.ui;
 
 import be.tarsos.dsp.example.utterasterisk.domain.Scoreboard;
 import be.tarsos.dsp.example.utterasterisk.domain.call.detected.DetectedCall;
+import be.tarsos.dsp.example.utterasterisk.domain.call.detected.DetectedNote;
 import be.tarsos.dsp.example.utterasterisk.domain.call.expected.Call;
 import be.tarsos.dsp.example.utterasterisk.domain.call.expected.CallFactory;
 import be.tarsos.dsp.example.utterasterisk.domain.call.expected.Note;
-import be.tarsos.dsp.example.utterasterisk.domain.call.detected.DetectedNote;
 import be.tarsos.dsp.example.utterasterisk.domain.comparison.NoteComparator;
 import be.tarsos.dsp.example.utterasterisk.domain.filter.Filter;
 import be.tarsos.dsp.util.PitchConverter;
 
-import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import javax.swing.*;
 
 public class UtterAsteriskPanel extends JPanel {
     private static final long serialVersionUID = -5330666476785715988L;
@@ -81,6 +81,7 @@ public class UtterAsteriskPanel extends JPanel {
             reset();
         }
 
+        drawScales(graphics);
         drawCurrentPointInTimeVerticalLine(graphics, x);
         drawNotesToPlay(graphics);
         drawNotesDetected(graphics);
@@ -110,6 +111,49 @@ public class UtterAsteriskPanel extends JPanel {
         callDrawingStrategy.draw(graphics, animalCall);
     }
 
+    private void drawScales(Graphics2D graphics) {
+        drawHzScale(graphics);
+        drawSecondsScale(graphics);
+    }
+
+    private void drawSecondsScale(Graphics2D graphics) {
+        double widthOfOneSecondInPixels = getWidth() / animalCall.getLengthInSeconds();
+        int currentSecond = 1;
+        while (currentSecond < animalCall.getLengthInSeconds()) {
+            int positionXAxis = (int) (currentSecond * widthOfOneSecondInPixels);
+            if (currentSecond % 5 == 0) {
+                graphics.setColor(Color.BLACK);
+            } else {
+                graphics.setColor(Color.LIGHT_GRAY);
+            }
+            graphics.drawLine(positionXAxis, 0, positionXAxis, getHeight());
+            graphics.drawString(String.valueOf(currentSecond), positionXAxis, getHeight());
+            currentSecond++;
+        }
+    }
+
+    private void drawHzScale(Graphics2D graphics) {
+        double heightOfOneHzInPixels = ((double) getHeight() / 2000);
+        int currentHz = 80;
+        while (currentHz < 2000) {
+            System.out.println("Height: " + currentHz);
+            int positionYAxis = (int) (getHeight() - (currentHz * heightOfOneHzInPixels));
+            if (currentHz % 500 == 0) {
+                graphics.setColor(Color.BLACK);
+                graphics.drawLine(0, positionYAxis, getWidth(), positionYAxis);
+                graphics.drawString(String.valueOf(currentHz), 0, positionYAxis);
+                currentHz += 100;
+            } else if (currentHz % 100 == 0) {
+                graphics.setColor(Color.LIGHT_GRAY);
+                graphics.drawLine(0, positionYAxis, getWidth(), positionYAxis);
+                graphics.drawString(String.valueOf(currentHz), 0, positionYAxis);
+                currentHz += 100;
+            } else {
+                currentHz++;
+            }
+        }
+    }
+
     private void drawScore(Graphics2D graphics) {
         graphics.setColor(Color.BLACK);
         if (lastReset != 0) {
@@ -132,9 +176,9 @@ public class UtterAsteriskPanel extends JPanel {
     public void addDetectedFrequency(double timestamp, double frequency) {
         timeOfCallVerticalBar = timestamp % animalCall.getLengthInSeconds();
 
-        boolean passesAllFilters = filters.stream().allMatch(filter-> filter.filter(frequency));
+        boolean passesAllFilters = filters.stream().allMatch(filter -> filter.filter(frequency));
         if (passesAllFilters) {
-            DetectedNote detectedNote = new DetectedNote(PitchConverter.hertzToRelativeCent(frequency), timestamp);
+            DetectedNote detectedNote = new DetectedNote(frequency, timestamp);
 
             Note expectedNote = animalCall.at(timestamp);
             noteComparator.compare(expectedNote, detectedNote);
