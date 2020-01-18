@@ -17,12 +17,13 @@ public class Call {
         return notes.get(index);
     }
 
-    public Note at(double seconds) {
+    public Note at(double milliSecondFromStart) {
         double cumulativeLength = 0;
+        double secondsFromStart = milliSecondFromStart / 1000;
         for (Note note : notes) {
             double previousNoteEnding = cumulativeLength;
             cumulativeLength += note.getDuration();
-            if (seconds > previousNoteEnding && seconds <= cumulativeLength) {
+            if (secondsFromStart > previousNoteEnding && secondsFromStart <= cumulativeLength) {
                 return note;
             }
         }

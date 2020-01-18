@@ -6,19 +6,19 @@ import be.tarsos.dsp.pitch.PitchDetectionHandler;
 import be.tarsos.dsp.pitch.PitchDetectionResult;
 
 public class UserPitchDetectionHandler implements PitchDetectionHandler {
-    private Timer timer;
+    private double startTime;
     private UtterAsteriskPanel panel; // TODO domain depends on UI
 
-    public UserPitchDetectionHandler(UtterAsteriskPanel panel) {
+    public UserPitchDetectionHandler(UtterAsteriskPanel panel, double startTime) {
         this.panel = panel;
-        this.timer = new Timer();
+        this.startTime = startTime;
     }
 
     @Override
     public void handlePitch(PitchDetectionResult pitchDetectionResult, AudioEvent audioEvent) {
-        //double timeStamp = audioEvent.getTimeStamp();
-//        System.out.println("Pitch: " + pitchDetectionResult.getPitch() + "\tisPitched: " + pitchDetectionResult.getPitch() + "\tprobability: " + pitchDetectionResult.getProbability() + "\ttimestamp: " + timeStamp);
+        double secondsSinceStart = audioEvent.getTimeStamp();
+        System.out.println("Pitch: " + pitchDetectionResult.getPitch() + "\tsecondsSinceStart: " + secondsSinceStart);
         float pitch = pitchDetectionResult.getPitch();
-        panel.addDetectedFrequency((double)timer.elapsed(), pitch);
+        panel.addDetectedFrequency(secondsSinceStart, pitch);
     }
 }

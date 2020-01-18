@@ -26,7 +26,7 @@ public class DetectedCallDrawingAsPoints implements DetectedCallDrawingStrategy 
     @Override
     public void draw(Graphics2D graphics, DetectedCall call) {
         for (DetectedNote note: call.getNotes()) {
-            double startTimeStamp = note.getTime() % call.getLengthInSeconds();
+            double startTimeStamp = note.getSecondsFromStart() % call.getLengthInSeconds();
             int patternX = (int) (startTimeStamp / (double) call.getLengthInSeconds() * parent.getWidth());
             int patternY = parent.getHeight() - (int) (note.getPitch() / UNKNOWN_CONSTANT * parent.getHeight());
 

@@ -106,8 +106,6 @@ public class UtterAsteriskApplication extends JFrame {
             scoreboard
         );
 
-        userPitchDetectionHandler = new UserPitchDetectionHandler(panel);
-
         algo = PitchEstimationAlgorithm.YIN;
 
         JPanel pitchDetectionPanel = new PitchDetectionPanel(algoChangeListener);
@@ -151,6 +149,8 @@ public class UtterAsteriskApplication extends JFrame {
         int overlap = OVERLAP;
 
         //textArea.append("Started listening with " + Shared.toLocalString(mixer.getMixerInfo().getName()) + "\n\tparams: " + threshold + "dB\n");
+
+        userPitchDetectionHandler = new UserPitchDetectionHandler(panel, System.currentTimeMillis());
 
         final AudioFormat format = new AudioFormat(sampleRate, 16, 1, true,
             false);

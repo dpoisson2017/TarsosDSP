@@ -603,7 +603,7 @@
 	<target name="example_utter_asterisk" depends="compile_for_jvm">
 		<jar destfile="UtterAsterisk-${version}.jar" filesetmanifest="mergewithoutmain">
 			<manifest>
-				<attribute name="Main-Class" value="be.tarsos.dsp.example.UtterAsterisk" />
+				<attribute name="Main-Class" value="be.tarsos.dsp.example.utterasterisk.UtterAsterisk" />
 				<attribute name="Class-Path" value="." />
 
 				<!-- Standard manifest attributes -->

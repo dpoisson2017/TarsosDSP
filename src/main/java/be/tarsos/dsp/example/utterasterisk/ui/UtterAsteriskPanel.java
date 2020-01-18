@@ -28,11 +28,9 @@ import be.tarsos.dsp.example.utterasterisk.domain.Scoreboard;
 import be.tarsos.dsp.example.utterasterisk.domain.call.detected.DetectedCall;
 import be.tarsos.dsp.example.utterasterisk.domain.call.detected.DetectedNote;
 import be.tarsos.dsp.example.utterasterisk.domain.call.expected.Call;
-import be.tarsos.dsp.example.utterasterisk.domain.call.expected.CallFactory;
 import be.tarsos.dsp.example.utterasterisk.domain.call.expected.Note;
 import be.tarsos.dsp.example.utterasterisk.domain.comparison.NoteComparator;
 import be.tarsos.dsp.example.utterasterisk.domain.filter.Filter;
-import be.tarsos.dsp.util.PitchConverter;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -42,7 +40,7 @@ import javax.swing.*;
 public class UtterAsteriskPanel extends JPanel {
     private static final long serialVersionUID = -5330666476785715988L;
     private double timeOfCallVerticalBar = 0;
-    private long lastReset;
+    private long startTimeOfCall;
     private double currentX = 0;
     private double errorToleranceInPercent;
     private CallDrawingStrategy callDrawingStrategy;
@@ -101,18 +99,19 @@ public class UtterAsteriskPanel extends JPanel {
     }
 
     private void reset() {
-        lastReset = System.currentTimeMillis();
+        startTimeOfCall = System.currentTimeMillis();
         detectedCall.clear();
         currentX = 0;
         scoreBoard.reset();
     }
 
     private boolean isBeginning(int x) {
-        return x < 3 && System.currentTimeMillis() - lastReset > 1000;
+        return x < 3 && System.currentTimeMillis() - startTimeOfCall > 1000;
     }
 
     private int calculateTimeOfCallPosition() {
         return (int) (timeOfCallVerticalBar / (float) animalCall.getLengthInSeconds() * getWidth());
+        //return (int) timeOfCallVerticalBar;
     }
 
     private void drawNotesDetected(Graphics2D graphics) {
@@ -130,29 +129,44 @@ public class UtterAsteriskPanel extends JPanel {
 
     private void drawSecondsScale(Graphics2D graphics) {
         double widthOfOneSecondInPixels = getWidth() / animalCall.getLengthInSeconds();
+        int midCallValue = (int) (animalCall.getLengthInSeconds() / 2);
         int currentSecond = 1;
         while (currentSecond < animalCall.getLengthInSeconds()) {
+            StringBuffer axisValueString = new StringBuffer();
+            axisValueString.append(String.valueOf(currentSecond));
+            if (currentSecond == midCallValue) {
+                axisValueString.append(" (s)");
+            }
+
             int positionXAxis = (int) (currentSecond * widthOfOneSecondInPixels);
             if (currentSecond % 5 == 0) {
                 graphics.setColor(Color.BLACK);
             } else {
                 graphics.setColor(Color.LIGHT_GRAY);
             }
+
             graphics.drawLine(positionXAxis, 0, positionXAxis, getHeight());
-            graphics.drawString(String.valueOf(currentSecond), positionXAxis, getHeight());
+            graphics.drawString(axisValueString.toString(), positionXAxis, getHeight());
             currentSecond++;
         }
     }
 
     private void drawHzScale(Graphics2D graphics) {
+        String axisName = "(Hz)";
         double heightOfOneHzInPixels = ((double) getHeight() / maximumFrequency);
+        int midFrequencyValue = maximumFrequency / 2;
         int currentHz = minimumFrequency;
         while (currentHz < maximumFrequency) {
             int positionYAxis = (int) (getHeight() - (currentHz * heightOfOneHzInPixels));
             if (currentHz % 500 == 0) {
                 graphics.setColor(Color.BLACK);
                 graphics.drawLine(0, positionYAxis, getWidth(), positionYAxis);
-                graphics.drawString(String.valueOf(currentHz), 0, positionYAxis);
+                StringBuffer axisValueString = new StringBuffer();
+                axisValueString.append(String.valueOf(currentHz));
+                if (currentHz % midFrequencyValue == 0) {
+                    axisValueString.append(" " + axisName);
+                }
+                graphics.drawString(axisValueString.toString(), 0, positionYAxis);
                 currentHz += 100;
             } else if (currentHz % 100 == 0) {
                 graphics.setColor(Color.LIGHT_GRAY);
@@ -167,7 +181,7 @@ public class UtterAsteriskPanel extends JPanel {
 
     private void drawScore(Graphics2D graphics) {
         graphics.setColor(Color.BLACK);
-        if (lastReset != 0) {
+        if (startTimeOfCall != 0) {
             graphics.drawString("Score: " + String.valueOf(scoreBoard.getScore()), getWidth() / 2, 20);
         }
     }
@@ -184,14 +198,14 @@ public class UtterAsteriskPanel extends JPanel {
         graphics.drawLine(x, 0, x, getHeight());
     }
 
-    public void addDetectedFrequency(double timestamp, double frequency) {
-        timeOfCallVerticalBar = timestamp;// % animalCall.getLengthInSeconds();
+    public void addDetectedFrequency(double secondsFromStart, double frequency) {
+        timeOfCallVerticalBar = secondsFromStart;
 
         boolean passesAllFilters = filters.stream().allMatch(filter -> filter.filter(frequency));
         if (passesAllFilters) {
-            DetectedNote detectedNote = new DetectedNote(frequency, timestamp);
+            DetectedNote detectedNote = new DetectedNote(frequency, secondsFromStart);
 
-            Note expectedNote = animalCall.at(timestamp);
+            Note expectedNote = animalCall.at(secondsFromStart);
             noteComparator.compare(expectedNote, detectedNote);
             detectedCall.addNote(detectedNote);
         }

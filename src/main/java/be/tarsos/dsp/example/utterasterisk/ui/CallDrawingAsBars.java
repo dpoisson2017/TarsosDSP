@@ -3,8 +3,8 @@ package be.tarsos.dsp.example.utterasterisk.ui;
 import be.tarsos.dsp.example.utterasterisk.domain.call.expected.Call;
 import be.tarsos.dsp.example.utterasterisk.domain.call.expected.Note;
 
-import javax.swing.*;
 import java.awt.*;
+import javax.swing.*;
 
 public class CallDrawingAsBars implements CallDrawingStrategy {
     private double errorTolerance;
@@ -26,16 +26,14 @@ public class CallDrawingAsBars implements CallDrawingStrategy {
         for (int i = 0; i < call.numberOfNotes(); i++) {
             Note note = call.getNote(i);
 
-            double lengthInSeconds = note.getDuration();// * secondsPerQuarterNote;//seconds
-            int barWidthInPixels = secondToPixelConverter.convert(lengthInSeconds);//(int) (lengthInSeconds / (double) call.getLengthInSeconds() * parent.getWidth());//pixels
-            int barHeightInPixels = (int)(errorTolerance/2);//(int) (errorTolerance * 2 / 1200.0 * parent.getHeight());
-            //int patternX = (int) ((currentXPosition) / (double) call.getLengthInSeconds() * parent.getWidth());
+            double lengthInSeconds = note.getDuration();
+            int barWidthInPixels = secondToPixelConverter.convert(lengthInSeconds);
+            int barHeightInPixels = (int) (errorTolerance / 2);
             int barXPosition = secondToPixelConverter.convert(currentXPosition);
-            //int patternY = parent.getHeight() - (int) (note.getPitch() / 1200.0 * parent.getHeight()) - patternHeightInPixels / 2;
             int barYPosition = parent.getHeight() - hzToPixelConverter.convert(note.getPitch()) - hzToPixelConverter.convert(errorTolerance);
-            System.out.println("x=" + barXPosition + " y=" + barYPosition + " width=" + barWidthInPixels + " height=" + barHeightInPixels);
-            graphics.drawRect(barXPosition, barYPosition, barWidthInPixels, barHeightInPixels);
-            currentXPosition += lengthInSeconds; //in seconds
+
+            graphics.fillRect(barXPosition, barYPosition, barWidthInPixels, barHeightInPixels);
+            currentXPosition += lengthInSeconds;
         }
     }
 }

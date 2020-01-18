@@ -10,13 +10,13 @@ public class SecondToPixelConverter {
         this.lengthInSeconds = lengthInSeconds;
     }
 
-    private double secondToPixelConverter(int widthInPixel, double lengthInSeconds) {
+    private double calculateWidthOfOneSecondInPixels(int widthInPixel, double lengthInSeconds) {
         double widthOfOneSecondInPixels = widthInPixel / lengthInSeconds;
         return widthOfOneSecondInPixels;
     }
 
     public int convert(double seconds) {
-        double widthOfOneSecondInPixels = secondToPixelConverter(panel.getWidth(), lengthInSeconds);
+        double widthOfOneSecondInPixels = calculateWidthOfOneSecondInPixels(panel.getWidth(), lengthInSeconds);
         return (int) (seconds * widthOfOneSecondInPixels);
     }
 }
