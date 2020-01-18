@@ -4,18 +4,18 @@ public class CallFactory {
 
     public Call createDefault() {
         Call call = new Call();
-        call.addNote(new Note(400, 1));
-        call.addNote(new Note(500, 2));
-        call.addNote(new Note(600, 0.5));
-        call.addNote(new Note(700, 1.5));
         call.addNote(new Note(800, 1));
         call.addNote(new Note(900, 2));
+        call.addNote(new Note(1000, 0.5));
+        call.addNote(new Note(1100, 1.5));
+        call.addNote(new Note(1200, 1));
+        call.addNote(new Note(1300, 2));
+        call.addNote(new Note(1200, 1));
+        call.addNote(new Note(1100, 1));
+        call.addNote(new Note(1000, 1));
+        call.addNote(new Note(900, 1));
         call.addNote(new Note(800, 1));
         call.addNote(new Note(700, 1));
-        call.addNote(new Note(600, 1));
-        call.addNote(new Note(500, 1));
-        call.addNote(new Note(400, 1));
-        call.addNote(new Note(300, 1));
 
         return call;
     }

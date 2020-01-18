@@ -17,9 +17,8 @@ public class Call {
         return notes.get(index);
     }
 
-    public Note at(double milliSecondFromStart) {
+    public Note at(double secondsFromStart) {
         double cumulativeLength = 0;
-        double secondsFromStart = milliSecondFromStart / 1000;
         for (Note note : notes) {
             double previousNoteEnding = cumulativeLength;
             cumulativeLength += note.getDuration();

@@ -3,8 +3,8 @@ package be.tarsos.dsp.example.utterasterisk.ui;
 import be.tarsos.dsp.example.utterasterisk.domain.call.detected.DetectedCall;
 import be.tarsos.dsp.example.utterasterisk.domain.call.detected.DetectedNote;
 
-import javax.swing.*;
 import java.awt.*;
+import javax.swing.*;
 
 public class DetectedCallDrawingAsPoints implements DetectedCallDrawingStrategy {
 
@@ -25,17 +25,16 @@ public class DetectedCallDrawingAsPoints implements DetectedCallDrawingStrategy 
 
     @Override
     public void draw(Graphics2D graphics, DetectedCall call) {
-        for (DetectedNote note: call.getNotes()) {
-            double startTimeStamp = note.getSecondsFromStart() % call.getLengthInSeconds();
-            int patternX = (int) (startTimeStamp / (double) call.getLengthInSeconds() * parent.getWidth());
-            int patternY = parent.getHeight() - (int) (note.getPitch() / UNKNOWN_CONSTANT * parent.getHeight());
+        for (DetectedNote note : call.getNotes()) {
+            int noteXPosition = secondToPixelConverter.convert(note.getSecondsFromStart());
+            int noteYPosition = parent.getHeight() - hzToPixelConverter.convert(note.getPitch());
 
             if (note.isMatch()) {
                 graphics.setColor(Color.GREEN);
             } else {
                 graphics.setColor(Color.RED);
             }
-            graphics.drawRect(patternX, patternY, RECTANGLE_WIDTH, RECTANGLE_HEIGHT);
+            graphics.drawRect(noteXPosition, noteYPosition, RECTANGLE_WIDTH, RECTANGLE_HEIGHT);
         }
     }
 }

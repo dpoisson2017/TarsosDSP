@@ -17,7 +17,7 @@ public class UserPitchDetectionHandler implements PitchDetectionHandler {
     @Override
     public void handlePitch(PitchDetectionResult pitchDetectionResult, AudioEvent audioEvent) {
         double secondsSinceStart = audioEvent.getTimeStamp();
-        System.out.println("Pitch: " + pitchDetectionResult.getPitch() + "\tsecondsSinceStart: " + secondsSinceStart);
+        //System.out.println("Pitch: " + pitchDetectionResult.getPitch() + "\tsecondsSinceStart: " + secondsSinceStart);
         float pitch = pitchDetectionResult.getPitch();
         panel.addDetectedFrequency(secondsSinceStart, pitch);
     }
