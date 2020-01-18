@@ -9,14 +9,6 @@ public class Note {
         this.duration = duration;
     }
 
-    @Override
-    public String toString() {
-        return "Note{" +
-            "pitch=" + pitch +
-            ", duration=" + duration +
-            '}';
-    }
-
     public double getDuration() {
         return duration;
     }

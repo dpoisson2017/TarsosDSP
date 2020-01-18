@@ -206,7 +206,6 @@ public class UtterAsteriskPanel extends JPanel {
             DetectedNote detectedNote = new DetectedNote(frequency, secondsFromStart);
 
             Note expectedNote = animalCall.at(secondsFromStart);
-            System.out.println("Expected note: " + expectedNote);
             noteComparator.compare(expectedNote, detectedNote);
             detectedCall.addNote(detectedNote);
         }
