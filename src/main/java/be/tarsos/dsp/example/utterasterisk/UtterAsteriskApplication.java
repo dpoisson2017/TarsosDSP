@@ -25,7 +25,8 @@
 package be.tarsos.dsp.example.utterasterisk;
 
 import be.tarsos.dsp.AudioDispatcher;
-import be.tarsos.dsp.SilenceDetector;
+import be.tarsos.dsp.AudioEvent;
+import be.tarsos.dsp.AudioProcessor;
 import be.tarsos.dsp.example.InputPanel;
 import be.tarsos.dsp.example.PitchDetectionPanel;
 import be.tarsos.dsp.example.utterasterisk.domain.Scoreboard;
@@ -33,13 +34,12 @@ import be.tarsos.dsp.example.utterasterisk.domain.UserPitchDetectionHandler;
 import be.tarsos.dsp.example.utterasterisk.domain.call.expected.Call;
 import be.tarsos.dsp.example.utterasterisk.domain.call.expected.CallFactory;
 import be.tarsos.dsp.example.utterasterisk.domain.comparison.NoteComparator;
+import be.tarsos.dsp.example.utterasterisk.domain.fft.FftResult;
 import be.tarsos.dsp.example.utterasterisk.domain.filter.BandPassFilter;
-import be.tarsos.dsp.example.utterasterisk.ui.HzToPixelConverter;
-import be.tarsos.dsp.example.utterasterisk.ui.SecondToPixelConverter;
 import be.tarsos.dsp.example.utterasterisk.ui.UtterAsteriskPanel;
 import be.tarsos.dsp.io.jvm.JVMAudioInputStream;
-import be.tarsos.dsp.pitch.PitchProcessor;
 import be.tarsos.dsp.pitch.PitchProcessor.PitchEstimationAlgorithm;
+import be.tarsos.dsp.util.fft.FFT;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -47,7 +47,9 @@ import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.DataLine;
@@ -147,6 +149,7 @@ public class UtterAsteriskApplication extends JFrame {
         float sampleRate = SAMPLE_RATE;
         int bufferSize = BUFFER_SIZE;
         int overlap = OVERLAP;
+        int fftSize = bufferSize / 2;
 
         //textArea.append("Started listening with " + Shared.toLocalString(mixer.getMixerInfo().getName()) + "\n\tparams: " + threshold + "dB\n");
 
@@ -166,8 +169,51 @@ public class UtterAsteriskApplication extends JFrame {
         // create a new dispatcher
         dispatcher = new AudioDispatcher(audioStream, bufferSize, overlap);
 
+
+        List<FftResult> fftResults = new ArrayList<>();
         // add a processor, handle percussion event.
-        dispatcher.addAudioProcessor(new PitchProcessor(algo, sampleRate, bufferSize, userPitchDetectionHandler));
+        //dispatcher.addAudioProcessor(new PitchProcessor(algo, sampleRate, bufferSize, userPitchDetectionHandler));
+        dispatcher.addAudioProcessor(new AudioProcessor() {
+
+            FFT fft = new FFT(bufferSize);
+            final float[] amplitudes = new float[fftSize];
+
+            @Override
+            public boolean process(AudioEvent audioEvent) {
+                double secondsSinceStart = audioEvent.getTimeStamp();
+                List<FftResult> topFrequencies = new ArrayList<>();
+
+                float[] audioBuffer = audioEvent.getFloatBuffer();
+                fft.forwardTransform(audioBuffer);
+                fft.modulus(audioBuffer, amplitudes);
+
+                for (int i = 0; i < amplitudes.length; i++) {
+                    if (amplitudes[i] > 10.0) {
+                        fftResults.add(new FftResult((int) fft.binToHz(i, sampleRate), amplitudes[i]));
+                        //        System.out.println(String.format("Amplitude at %3d Hz: %8.3f", (int) fft.binToHz(i, sampleRate), amplitudes[i]));
+                    }
+                }
+                if (!fftResults.isEmpty()) {
+                    Collections.sort(fftResults);
+                    for (int index = 0; index < Math.min(1, fftResults.size()); index++) {
+                        FftResult fftResult = fftResults.get(index);
+                        topFrequencies.add(index, fftResult);
+                        System.out.println(String.format("Amplitude at %3d Hz: %8.3f", fftResult.getFrequencyInHz(), fftResult.getAmplitude()));
+                    }
+                    System.out.println();
+
+                }
+                panel.addDetectedFrequency(secondsSinceStart, topFrequencies);
+                fftResults.clear();
+
+                return true;
+            }
+
+            @Override
+            public void processingFinished() {
+
+            }
+        });
 
         // run the dispatcher (on a new thread).
         new Thread(dispatcher, "Audio dispatching").start();

@@ -30,6 +30,7 @@ import be.tarsos.dsp.example.utterasterisk.domain.call.detected.DetectedNote;
 import be.tarsos.dsp.example.utterasterisk.domain.call.expected.Call;
 import be.tarsos.dsp.example.utterasterisk.domain.call.expected.Note;
 import be.tarsos.dsp.example.utterasterisk.domain.comparison.NoteComparator;
+import be.tarsos.dsp.example.utterasterisk.domain.fft.FftResult;
 import be.tarsos.dsp.example.utterasterisk.domain.filter.Filter;
 
 import java.awt.*;
@@ -208,6 +209,22 @@ public class UtterAsteriskPanel extends JPanel {
             Note expectedNote = animalCall.at(secondsFromStart);
             noteComparator.compare(expectedNote, detectedNote);
             detectedCall.addNote(detectedNote);
+        }
+        this.repaint();
+    }
+
+    public void addDetectedFrequency(double secondsFromStart, List<FftResult> fftResults) {
+        timeOfCallVerticalBar = secondsFromStart;
+
+        for (FftResult fftResult : fftResults) {
+            boolean passesAllFilters = filters.stream().allMatch(filter -> filter.filter(fftResult.getFrequencyInHz()));
+            if (passesAllFilters) {
+                DetectedNote detectedNote = new DetectedNote(fftResult.getFrequencyInHz(), secondsFromStart);
+
+                Note expectedNote = animalCall.at(secondsFromStart);
+                noteComparator.compare(expectedNote, detectedNote);
+                detectedCall.addNote(detectedNote);
+            }
         }
         this.repaint();
     }
